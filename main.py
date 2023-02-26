@@ -1,4 +1,5 @@
 
+
 from __future__ import print_function
 
 import argparse
@@ -216,6 +217,10 @@ def testPich(checkpoint_path, dataloader, model, device, output_dir, args):
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='LDC trainer.')
+    parser.add_argument('--run-mode',
+                        type=str,
+                        default='test',
+                        help='test | train')
     parser.add_argument('--choose_test_data',
                         type=int,
                         default=-1,
@@ -226,7 +231,7 @@ def parse_args():
     TEST_DATA = DATASET_NAMES[parser.parse_args().choose_test_data] # max 8
     test_inf = dataset_info(TEST_DATA, is_linux=IS_LINUX)
     test_dir = test_inf['data_dir']
-    is_testing =True
+    is_testing = True if parser.parse_args().run_mode == 'test'  else False
 
     # Training settings
     # BIPED-B2=1, BIPDE-B3=2, just for evaluation, using LDC trained with 2 or 3 bloacks
