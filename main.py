@@ -125,6 +125,15 @@ def validate_one_epoch(epoch, dataloader, model, device, output_dir, arg=None):
                                      file_names,img_shape=image_shape,
                                      arg=arg)
 
+def save_model_as_torch_script(model):
+    # An example input you would normally provide to your model's forward() method.
+    example = torch.rand(1, 3, 352, 352).to("cpu")
+
+    # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
+    traced_script_module = torch.jit.trace(model, example)
+    traced_script_module.save("traced_resnet_model.pt")
+    # output = traced_script_module(torch.ones(1, 3, 352, 352).to("cuda"))
+    # print(output)
 
 def test(checkpoint_path, dataloader, model, device, output_dir, args):
     if not os.path.isfile(checkpoint_path):
@@ -158,6 +167,7 @@ def test(checkpoint_path, dataloader, model, device, output_dir, args):
             end = time.perf_counter()
             if device.type == 'cuda':
                 torch.cuda.synchronize()
+
             preds = model(images)
             if device.type == 'cuda':
                 torch.cuda.synchronize()
