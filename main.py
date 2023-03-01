@@ -128,12 +128,16 @@ def validate_one_epoch(epoch, dataloader, model, device, output_dir, arg=None):
 def save_model_as_torch_script(model):
     # An example input you would normally provide to your model's forward() method.
     example = torch.rand(1, 3, 352, 352).to("cpu")
+    model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
 
     # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
     traced_script_module = torch.jit.trace(model, example)
+    traced_script_module.eval()
     traced_script_module.save("traced_resnet_model.pt")
     # output = traced_script_module(torch.ones(1, 3, 352, 352).to("cuda"))
     # print(output)
+
+
 
 def test(checkpoint_path, dataloader, model, device, output_dir, args):
     if not os.path.isfile(checkpoint_path):
@@ -142,6 +146,8 @@ def test(checkpoint_path, dataloader, model, device, output_dir, args):
     print(f"Restoring weights from: {checkpoint_path}")
     model.load_state_dict(torch.load(checkpoint_path,
                                      map_location=device))
+
+    save_model_as_torch_script(model)
 
     model.eval()
 
