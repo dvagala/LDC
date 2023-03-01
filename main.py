@@ -12,6 +12,8 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from thop import profile
+import torchvision
+
 
 from dataset import DATASET_NAMES, BipedDataset, TestDataset, dataset_info
 # from loss import *
