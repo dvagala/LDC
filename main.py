@@ -127,9 +127,9 @@ def validate_one_epoch(epoch, dataloader, model, device, output_dir, arg=None):
                                      file_names,img_shape=image_shape,
                                      arg=arg)
 
-def save_model_as_torch_script(model):
+def save_model_as_torch_script(model, device):
     # An example input you would normally provide to your model's forward() method.
-    example = torch.rand(1, 3, 352, 352).to("cpu")
+    example = torch.rand(1, 3, 352, 352).to(device)
     model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
 
     # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
@@ -149,7 +149,7 @@ def test(checkpoint_path, dataloader, model, device, output_dir, args):
     model.load_state_dict(torch.load(checkpoint_path,
                                      map_location=device))
 
-    save_model_as_torch_script(model)
+    save_model_as_torch_script(model, device)
     return
 
     model.eval()
@@ -407,6 +407,7 @@ def main(args):
     # Get computing device
     device = torch.device('cpu' if torch.cuda.device_count() == 0
                           else 'cuda')
+    device = 'cpu'
 
     # Instantiate model and move it to the computing device
     model = LDC().to(device)
