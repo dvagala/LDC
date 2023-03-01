@@ -150,6 +150,7 @@ def test(checkpoint_path, dataloader, model, device, output_dir, args):
                                      map_location=device))
 
     save_model_as_torch_script(model)
+    return
 
     model.eval()
 
