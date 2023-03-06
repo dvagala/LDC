@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Tuple
 
 def weight_init(m):
     if isinstance(m, (nn.Conv2d,)):
