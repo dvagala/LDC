@@ -518,7 +518,7 @@ def main(args):
 
         # Save model after end of every epoch
         torch.save(model.module.state_dict() if hasattr(model, "module") else model.state_dict(),
-                   os.path.join(output_dir_epoch, '{0}_model.pth'.format(epoch)))
+                   os.path.join(output_dir_epoch, f'{epoch}_model{"_scriptable" if model.is_scriptable else ""}.pt'))
         if tb_writer is not None:
             tb_writer.add_scalar('loss',
                                  avg_loss,

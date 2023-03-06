@@ -165,6 +165,7 @@ class LDC(nn.Module):
 
     def __init__(self):
         super(LDC, self).__init__()
+        self.is_scriptable = True
         self.block_1 = DoubleConvBlock(3, 16, 16, stride=2,)
         self.block_2 = DoubleConvBlock(16, 32, use_act=False)
         self.dblock_3 = _DenseBlock2Layers( 32, 64) # [128,256,100,100]

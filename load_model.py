@@ -31,14 +31,13 @@ from modelB4_scriptable import LDC
 
 trained_model_file = sys.argv[1]
 
+scripted_model_file = trained_model_file.replace("scriptable", "scripted")
 
-
-device = torch.device('cpu' if torch.cuda.device_count() == 0
-			else 'cuda')
+      
+device = torch.device('cpu')
 
 # Instantiate model and move it to the computing device
 model = LDC().to(device)
-
 
 
 model.load_state_dict(torch.load(trained_model_file,
@@ -47,6 +46,8 @@ model.load_state_dict(torch.load(trained_model_file,
 # quantized_model = torch.quantization.convert(model)
 scripted_model = torch.jit.script(model)
 # opt_model = optimize_for_mobile(scripted_model)
-scripted_model.save(f'converted_{trained_model_file}')
+scripted_model.save(scripted_model_file)
 
-# model.eval()
+print('saved')
+
+
