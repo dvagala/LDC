@@ -404,7 +404,6 @@ def main(args):
     # Get computing device
     device = torch.device('cpu' if torch.cuda.device_count() == 0
                           else 'cuda')
-    device = 'cpu'
 
     # Instantiate model and move it to the computing device
     model = LDC().to(device)
