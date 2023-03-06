@@ -6,3 +6,5 @@ __pycache__/
 result/BRIND2CLASSIC/avg/35028.png
 
 result/BRIND2CLASSIC/fused/35028.png
+
+checkpoints/
