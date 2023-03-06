@@ -409,6 +409,8 @@ def main(args):
 
     # Instantiate model and move it to the computing device
     model = LDC().to(device)
+    print(f"\nIs model scriptable: {model.is_scriptable}\n")
+
     # model = nn.DataParallel(model)
     ini_epoch =0
     if not args.is_testing:
