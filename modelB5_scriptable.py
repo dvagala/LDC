@@ -40,32 +40,54 @@ class CoFusion(nn.Module):
         attn = F.softmax(self.conv3(attn), dim=1)
         return ((x * attn).sum(1)).unsqueeze(1)
 
-class _DenseLayer(nn.Sequential):
+
+
+class _DenseLayer(nn.Module):
     def __init__(self, input_features, out_features):
         super(_DenseLayer, self).__init__()
 
-        self.add_module('conv1', nn.Conv2d(input_features, out_features,
-                                           kernel_size=3, stride=1, padding=2, bias=True)),
-        self.add_module('norm1', nn.BatchNorm2d(out_features)),
-        self.add_module('relu1', nn.ReLU(inplace=True)),
-        self.add_module('conv2', nn.Conv2d(out_features, out_features,
-                                           kernel_size=3, stride=1, bias=True)),
-        self.add_module('norm2', nn.BatchNorm2d(out_features))
+        self.first_layer = nn.Conv2d(input_features, out_features, kernel_size=3, stride=1, padding=2, bias=True)
+        self.second_layer = nn.BatchNorm2d(out_features)
+        self.third_layer = nn.ReLU(inplace=True)
+        self.fourth_layer = nn.Conv2d(out_features, out_features, kernel_size=3, stride=1, bias=True)
+        self.fifth_layer = nn.BatchNorm2d(out_features)
 
-    def forward(self, x):
+    def forward(self, x: Tuple[torch.Tensor, torch.Tensor]):
         x1, x2 = x
 
-        new_features = super(_DenseLayer, self).forward(F.relu(x1))  # F.relu()
+        x = self.first_layer(F.relu(x1))
+        x = self.second_layer(x)
+        x = self.third_layer(x)
+        x = self.fourth_layer(x)
+        new_features = self.fifth_layer(x)
+
         return 0.5 * (new_features + x2), x2
 
 
-class _DenseBlock(nn.Sequential):
-    def __init__(self, num_layers, input_features, out_features):
-        super(_DenseBlock, self).__init__()
-        for i in range(num_layers):
-            layer = _DenseLayer(input_features, out_features)
-            self.add_module('denselayer%d' % (i + 1), layer)
-            input_features = out_features
+class _DenseBlock2Layers(nn.Module):
+    def __init__(self, input_features, out_features):
+        super(_DenseBlock2Layers, self).__init__()
+
+        self.first_layer = _DenseLayer(input_features, out_features)       
+        self.second_layer = _DenseLayer(out_features, out_features)  
+    def forward(self, x: Tuple[torch.Tensor, torch.Tensor]):
+        x = self.first_layer(x)      
+        x = self.second_layer(x)
+        return x
+
+class _DenseBlock3Layers(nn.Module):
+    def __init__(self, input_features, out_features):
+        super(_DenseBlock3Layers, self).__init__()
+
+        self.first_layer = _DenseLayer(input_features, out_features)       
+        self.second_layer = _DenseLayer(out_features, out_features)  
+        self.third_layer = _DenseLayer(out_features, out_features)          
+    def forward(self, x: Tuple[torch.Tensor, torch.Tensor]):
+        x = self.first_layer(x)      
+        x = self.second_layer(x)
+        x = self.third_layer(x)
+        return x
+
 
 
 class UpConvBlock(nn.Module):
@@ -151,9 +173,9 @@ class LDC(nn.Module):
         super(LDC, self).__init__()
         self.block_1 = DoubleConvBlock(3, 16, 16, stride=2,)
         self.block_2 = DoubleConvBlock(16, 32, use_act=False)
-        self.dblock_3 = _DenseBlock(2, 32, 64) # [128,256,100,100]
-        self.dblock_4 = _DenseBlock(3, 64, 96)# 128
-        self.dblock_5 = _DenseBlock(3, 96, 32) # 128, 16
+        self.dblock_3 = _DenseBlock2Layers(2, 32, 64) # [128,256,100,100]
+        self.dblock_4 = _DenseBlock3Layers(3, 64, 96)# 128
+        self.dblock_5 = _DenseBlock3Layers(3, 96, 32) # 128, 16
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         # left skip connections, figure in Journal
