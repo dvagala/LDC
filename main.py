@@ -149,9 +149,6 @@ def test(checkpoint_path, dataloader, model, device, output_dir, args):
     model.load_state_dict(torch.load(checkpoint_path,
                                      map_location=device))
 
-    save_model_as_torch_script(model, device)
-    return
-
     model.eval()
 
     with torch.no_grad():
