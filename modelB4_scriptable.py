@@ -216,14 +216,14 @@ class LDC(nn.Module):
 
         # Block 3
         block_3_pre_dense = self.pre_dense_3(block_2_down) # [8,64,88,88] block 3 L connection
-        block_3, _ = self.dblock_3([block_2_add, block_3_pre_dense]) # [8,64,88,88]
+        block_3, _ = self.dblock_3((block_2_add, block_3_pre_dense)) # [8,64,88,88]
         block_3_down = self.maxpool(block_3) # [8,64,44,44]
         block_3_add = block_3_down + block_2_side # [8,64,44,44]
 
         # Block 4
         block_2_resize_half = self.pre_dense_2(block_2_down) # [8,64,44,44]
         block_4_pre_dense = self.pre_dense_4(block_3_down+block_2_resize_half) # [8,96,44,44]
-        block_4, _ = self.dblock_4([block_3_add, block_4_pre_dense]) # [8,96,44,44]
+        block_4, _ = self.dblock_4((block_3_add, block_4_pre_dense)) # [8,96,44,44]
 
 
         # upsampling blocks
