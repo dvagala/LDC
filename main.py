@@ -47,9 +47,16 @@ def train_one_epoch(epoch, dataloader, model, criterions, optimizer, device,
     l_weight0 = [0.7,0.7,1.1,0.7,1.3] # for bdcn loss2-B4
     # l_weight0 = [0.7, 0.7, 1.1, 1.1, 0.3, 0.3, 1.3] # for bdcn loss2-B6
 
+
+    # This seems to be for B6. 
+    # l_weight = [[0.05, 2.], [0.05, 2.], [0.05, 2.],
+    #             [0.1, 1.], [0.1, 1.], [0.1, 1.],
+    #             [0.01, 4.]]  # for cats loss    
+    # This should be the correct weights for B4 according to this issue https://github.com/xavysp/LDC/issues/4
     l_weight = [[0.05, 2.], [0.05, 2.], [0.05, 2.],
-                [0.1, 1.], [0.1, 1.], [0.1, 1.],
-                [0.01, 4.]]  # for cats loss
+                [0.1, 1.],
+                [0.01, 4.]]  # for cats loss. This seems to be for B6. 
+
     loss_avg =[]
     for batch_id, sample_batched in enumerate(dataloader):
         images = sample_batched['images'].to(device)  # BxCxHxW
