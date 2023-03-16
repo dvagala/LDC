@@ -42,10 +42,10 @@ model = LDC().to(device)
 
 model.load_state_dict(torch.load(trained_model_file, map_location=device))
 
-# quantized_model = torch.quantization.convert(model)
+# model = torch.quantization.convert(model)
 scripted_model = torch.jit.script(model)
 
-# a = optimize_for_mobile(scripted_model)
+# scripted_model = optimize_for_mobile(scripted_model)
 scripted_model.save(scripted_model_file)
 
 print('saved')
