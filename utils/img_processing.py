@@ -38,7 +38,6 @@ def save_image_batch_to_disk(tensor, output_dir, file_names, img_shape=None, arg
     os.makedirs(output_dir, exist_ok=True)
     if not arg.is_testing:
         assert len(tensor.shape) == 4, tensor.shape
-        img_shape = np.array(img_shape)
         for tensor_image, file_name in zip(tensor, file_names):
             image_vis = kn.utils.tensor_to_image(
                 torch.sigmoid(tensor_image))#[..., 0]
