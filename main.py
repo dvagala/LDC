@@ -275,6 +275,10 @@ def parse_args():
                         default=25,
                         metavar='N',
                         help='Number of training epochs (default: 25).')
+    parser.add_argument('--pre_trained_model',
+                        type=str,
+                        default=None,
+                        help='pre_trained_model')
 
     # ----------- test -------0--
 
@@ -426,6 +430,10 @@ def main(args):
             ini_epoch=8
             model.load_state_dict(torch.load(checkpoint_path2,
                                          map_location=device))
+
+        if args.pre_trained_model != None:
+            model.load_state_dict(torch.load(args.pre_trained_model, map_location=device))
+
         dataset_train = BipedDataset(args.input_dir,
                                      img_width=args.img_width,
                                      img_height=args.img_height,
