@@ -22,7 +22,7 @@ from dataset import DATASET_NAMES, BipedDataset, TestDataset, dataset_info
 from loss2 import *
 # from modelB6 import LDC
 # from modelB5 import LDC
-from modelB4_scriptable import LDC
+from modelB3_scriptable import LDC
 # from modelB4 import LDC
 # from modelB3 import LDC
 # from modelB2 import LDC
@@ -42,11 +42,12 @@ model = LDC().to(device)
 
 model.load_state_dict(torch.load(trained_model_file, map_location=device))
 
-# model = torch.quantization.convert(model)
+# model = torch.quantization.convert(model) # this by it self don't do any performacne boost
 scripted_model = torch.jit.script(model)
 
-# scripted_model = optimize_for_mobile(scripted_model)
-scripted_model.save(scripted_model_file)
+scripted_model = optimize_for_mobile(scripted_model) # this makes it faster by 3/4 but only flutter release builds
+scripted_model._save_for_lite_interpreter(scripted_model_file) # seems that this has no impact, but I guess it can be here
+# scripted_model.save(scripted_model_file)
 
 print('saved')
 
