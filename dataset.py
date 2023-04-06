@@ -361,9 +361,7 @@ class TestDataset(Dataset):
         # if self.rgb:
         #     img = img[:, :, ::-1]  # RGB->BGR
         img -= self.mean_bgr
-        # img = img.transpose((2, 0, 1))
-
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = img.transpose((2, 0, 1))
         img = torch.from_numpy(img.copy()).float()
 
         if self.test_data == "CLASSIC":
@@ -531,8 +529,7 @@ class BipedDataset(Dataset):
         # gt[gt > 0.3] +=0.7#0.4
         # gt = np.clip(gt, 0., 1.)
 
-        # img = img.transpose((2, 0, 1))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = img.transpose((2, 0, 1))
         img = torch.from_numpy(img.copy()).float()
         gt = torch.from_numpy(np.array([gt])).float()
         return img, gt
