@@ -1,5 +1,7 @@
 
 
+
+
 from __future__ import print_function
 
 import argparse
@@ -16,7 +18,7 @@ import torchvision
 
 
 
-from dataset import DATASET_NAMES, BipedDataset, TestDataset, dataset_info
+from dataset import DATASET_NAMES, BipedDataset, TestDataset, ValidationDataset, dataset_info
 # from loss import *
 from loss2 import *
 # from modelB6 import LDC
@@ -63,9 +65,14 @@ def train_one_epoch(epoch, dataloader, model, criterions, optimizer, device,
         labels = sample_batched['labels'].to(device)  # BxHxW
         preds_list = model(images)
 
+        print(f'labels.shape: {labels[0].shape}')
         # loss = sum([criterion2(preds, labels,l_w) for preds, l_w in zip(preds_list[:-1],l_weight0)]) # bdcn_loss2
-        loss = sum([criterion1(preds, labels, l_w, device) for preds, l_w in zip(preds_list, l_weight)])  # cats_loss
-
+        loss = 0
+        for preds, l_w in zip(preds_list, l_weight):
+            # print(f'preds.shape: {preds.shape}')
+            # print(f'l_w: {l_w}')
+            # print(f'labels.shape: {labels.shape}')
+            loss += criterion1(preds, labels, l_w, device)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -117,24 +124,44 @@ def train_one_epoch(epoch, dataloader, model, criterions, optimizer, device,
     loss_avg = np.array(loss_avg).mean()
     return loss_avg
 
-def validate_one_epoch(epoch, dataloader, model, device, output_dir, arg=None):
+def validate_one_epoch(epoch,  criterions,  dataloader, model, device, output_dir, arg=None):
     # XXX This is not really validation, but testing
 
     # Put model in eval mode
     model.eval()
 
+    if isinstance(criterions, list):
+        criterion1, criterion2 = criterions
+    else:
+        criterion1 = criterions
+
+    l_weight = [[0.05, 2.], [0.05, 2.], [0.05, 2.],
+            [0.1, 1.],
+            [0.01, 4.]]  # for cats loss. This seems to be for B6. 
+
     with torch.no_grad():
         for _, sample_batched in enumerate(dataloader):
             images = sample_batched['images'].to(device)
-            # labels = sample_batched['labels'].to(device)
-            file_names = sample_batched['file_names']
-            image_shape = sample_batched['image_shape']
-            preds = model(images)
-            # print('pred shape', preds[0].shape)
-            save_image_batch_to_disk(preds[-1],
-                                     output_dir,
-                                     file_names,img_shape=image_shape,
-                                     arg=arg)
+            labels = sample_batched['labels'].to(device)
+
+
+            # file_names = sample_batched['file_names']
+            # image_shape = sample_batched['image_shape']
+            preds_list = model(images)
+
+            # loss = sum([criterion1(preds, labels, l_w, device) for preds, l_w in zip(preds, l_weight)])  # cats_loss
+            # print(f'loss: {loss.item()}')
+            for preds, l_w in zip(preds_list, l_weight):
+                print(f'preds.shape: {preds.shape}')
+                # print(f'l_w: {l_w}')
+                print(f'labels.shape: {labels.shape}')
+                # loss += criterion1(preds, labels, l_w, device)
+
+            # # print('pred shape', preds[0].shape)
+            # save_image_batch_to_disk(preds_list[-1],
+            #                          output_dir,
+            #                          file_names,img_shape=image_shape,
+            #                          arg=arg)
 
 def save_model_as_torch_script(model, device):
     # An example input you would normally provide to your model's forward() method.
@@ -447,28 +474,42 @@ def main(args):
                                       shuffle=True,
                                       num_workers=args.workers)
 
-    dataset_val = TestDataset(args.input_val_dir,
-                              test_data=args.test_data,
-                              img_width=args.test_img_width,
-                              img_height=args.test_img_height,
-                              mean_bgr=args.mean_pixel_values[0:3] if len(
-                                  args.mean_pixel_values) == 4 else args.mean_pixel_values,
-                              test_list=args.test_list, arg=args
-                              )
+    dataset_val = ValidationDataset(args.input_dir,
+                                    img_width=args.img_width,
+                                    img_height=args.img_height,
+                                    mean_bgr=args.mean_pixel_values[0:3] if len(
+                                        args.mean_pixel_values) == 4 else args.mean_pixel_values,
+                                    train_mode='train',
+                                    arg=args
+                                    )
     dataloader_val = DataLoader(dataset_val,
-                                batch_size=1,
-                                shuffle=False,
-                                num_workers=args.workers)
+                                    batch_size=args.batch_size,
+                                    shuffle=True,
+                                    num_workers=args.workers)
+
+
+    # dataset_val = TestDataset(args.input_val_dir,
+    #                           test_data=args.test_data,
+    #                           img_width=args.test_img_width,
+    #                           img_height=args.test_img_height,
+    #                           mean_bgr=args.mean_pixel_values[0:3] if len(
+    #                               args.mean_pixel_values) == 4 else args.mean_pixel_values,
+    #                           test_list=args.test_list, arg=args
+    #                           )
+    # dataloader_val = DataLoader(dataset_val,
+    #                             batch_size=1,
+    #                             shuffle=False,
+    #                             num_workers=args.workers)
     # Testing
     if args.is_testing:
 
         output_dir = os.path.join(args.res_dir, args.train_data+"2"+ args.test_data)
-        print(f"output_dir: {output_dir}")
-        if args.double_img:
-            # run twice the same image changing the image's channels
-            testPich(checkpoint_path, dataloader_val, model, device, output_dir, args)
-        else:
-            test(checkpoint_path, dataloader_val, model, device, output_dir, args)
+        # print(f"output_dir: {output_dir}")
+        # if args.double_img:
+        #     # run twice the same image changing the image's channels
+        #     testPich(checkpoint_path, dataloader_val, model, device, output_dir, args)
+        # else:
+        #     test(checkpoint_path, dataloader_val, model, device, output_dir, args)
 
         # Count parameters:
         num_param = count_parameters(model)
@@ -519,6 +560,14 @@ def main(args):
         os.makedirs(output_dir_epoch,exist_ok=True)
         os.makedirs(img_test_dir,exist_ok=True)
 
+        validate_one_epoch(epoch,
+                        criterion,
+                        dataloader_val,
+                        model,
+                        device,
+                        img_test_dir,
+                        arg=args)
+
         avg_loss =train_one_epoch(epoch,dataloader_train,
                         model, criterion,
                         optimizer,
@@ -526,12 +575,13 @@ def main(args):
                         args.log_interval_vis,
                         tb_writer=tb_writer,
                         args=args)
-        validate_one_epoch(epoch,
-                           dataloader_val,
-                           model,
-                           device,
-                           img_test_dir,
-                           arg=args)
+        # validate_one_epoch(epoch,
+        #                    criterion,
+        #                    dataloader_val,
+        #                    model,
+        #                    device,
+        #                    img_test_dir,
+        #                    arg=args)
 
         # Save model after end of every epoch
         torch.save(model.module.state_dict() if hasattr(model, "module") else model.state_dict(),

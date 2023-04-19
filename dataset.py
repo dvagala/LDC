@@ -223,6 +223,34 @@ def dataset_info(dataset_name, is_linux=True):
 
 
 class TestDataset(Dataset):
+    train_modes = ['train', 'test', ]
+    dataset_types = ['rgbr', ]
+    data_types = ['aug', ]
+
+    def __init__(self,
+                 data_root,
+                 img_height,
+                 img_width,
+                 mean_bgr,
+                 train_mode='train',
+                 dataset_type='rgbr',
+                 #  is_scaling=None,
+                 # Whether to crop image or otherwise resize image to match image height and width.
+                 crop_img=False,
+                 arg=None
+                 ):
+        self.data_root = data_root
+        self.train_mode = train_mode
+        self.dataset_type = dataset_type
+        self.data_type = 'aug'  # be aware that this might change in the future
+        self.img_height = img_height
+        self.img_width = img_width
+        self.mean_bgr = mean_bgr
+        self.crop_img = crop_img
+        self.arg = arg
+
+        self.data_index = self._build_index()
+
     def __init__(self,
                  data_root,
                  test_data,
@@ -529,6 +557,133 @@ class BipedDataset(Dataset):
         # gt[gt > 0.3] +=0.7#0.4
         # gt = np.clip(gt, 0., 1.)
 
+        img = img.transpose((2, 0, 1))
+        img = torch.from_numpy(img.copy()).float()
+        gt = torch.from_numpy(np.array([gt])).float()
+        return img, gt
+
+class ValidationDataset(Dataset):
+    train_modes = ['train', 'test', ]
+    dataset_types = ['rgbr', ]
+    data_types = ['aug', ]
+
+    def __init__(self,
+                 data_root,
+                 img_height,
+                 img_width,
+                 mean_bgr,
+                 train_mode='train',
+                 dataset_type='rgbr',
+                 #  is_scaling=None,
+                 # Whether to crop image or otherwise resize image to match image height and width.
+                 crop_img=False,
+                 arg=None
+                 ):
+        self.data_root = data_root
+        self.train_mode = train_mode
+        self.dataset_type = dataset_type
+        self.data_type = 'aug'  # be aware that this might change in the future
+        self.img_height = img_height
+        self.img_width = img_width
+        self.mean_bgr = mean_bgr
+        self.crop_img = crop_img
+        self.arg = arg
+
+        self.data_index = self._build_index()
+
+    def _build_index(self):
+        assert self.train_mode in self.train_modes, self.train_mode
+        assert self.dataset_type in self.dataset_types, self.dataset_type
+        assert self.data_type in self.data_types, self.data_type
+
+        data_root = os.path.abspath(self.data_root)
+        sample_indices = []
+        if self.arg.train_data.lower() == 'biped':
+
+            images_path = os.path.join(data_root,
+                                       'edges/imgs',
+                                       self.train_mode,
+                                       self.dataset_type,
+                                       self.data_type)
+            labels_path = os.path.join(data_root,
+                                       'edges/edge_maps',
+                                       self.train_mode,
+                                       self.dataset_type,
+                                       self.data_type)
+
+            for directory_name in os.listdir(images_path):
+                image_directories = os.path.join(images_path, directory_name)
+                for file_name_ext in os.listdir(image_directories):
+                    file_name = os.path.splitext(file_name_ext)[0]
+                    sample_indices.append(
+                        (os.path.join(images_path, directory_name, file_name + '.jpg'),
+                         os.path.join(labels_path, directory_name, file_name + '.png'),)
+                    )
+        else:
+            file_path = os.path.join(data_root, self.arg.test_list)
+            if self.arg.train_data.lower() == 'bsds':
+
+                with open(file_path, 'r') as f:
+                    files = f.readlines()
+                files = [line.strip() for line in files]
+
+                pairs = [line.split() for line in files]
+                for pair in pairs:
+                    tmp_img = pair[0]
+                    tmp_gt = pair[1]
+                    sample_indices.append(
+                        (os.path.join(data_root, tmp_img),
+                         os.path.join(data_root, tmp_gt),))
+            else:
+                with open(file_path) as f:
+                    files = json.load(f)
+                for pair in files:
+                    tmp_img = pair[0]
+                    tmp_gt = pair[1]
+                    sample_indices.append(
+                        (os.path.join(data_root, tmp_img),
+                         os.path.join(data_root, tmp_gt),))
+
+        return sample_indices
+
+    def __len__(self):
+        return len(self.data_index)
+
+    def __getitem__(self, idx):
+        # get data sample
+        image_path, label_path = self.data_index[idx]
+
+        # load data
+        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        label = cv2.imread(label_path, cv2.IMREAD_GRAYSCALE)
+        image, label = self.transform(img=image, gt=label)
+        return dict(images=image, labels=label)
+
+    def transform(self, img, gt):
+        gt = np.array(gt, dtype=np.float32)
+        if len(gt.shape) == 3:
+            gt = gt[:, :, 0]
+
+        gt /= 255.  # for LDC input and BDCN
+
+        img = np.array(img, dtype=np.float32)
+        img -= self.mean_bgr
+        i_h, i_w, _ = img.shape
+        #  400 for BIPEd and 352 for BSDS check with 384
+        crop_size = self.img_height if self.img_height == self.img_width else None  # 448# MDBD=480 BIPED=480/400 BSDS=352
+
+        # for BSDS 352/BRIND
+        if i_w > crop_size and i_h > crop_size:  # later 400, before crop_size
+            i = random.randint(0, i_h - crop_size)
+            j = random.randint(0, i_w - crop_size)
+            img = img[i:i + crop_size, j:j + crop_size]
+            gt = gt[i:i + crop_size, j:j + crop_size]
+        else:
+            # New addidings
+            img = cv2.resize(img, dsize=(crop_size, crop_size))
+            gt = cv2.resize(gt, dsize=(crop_size, crop_size))
+        gt[gt > 0.2] += 0.6  # 0.5 for BIPED
+        gt = np.clip(gt, 0., 1.)  # BIPED
         img = img.transpose((2, 0, 1))
         img = torch.from_numpy(img.copy()).float()
         gt = torch.from_numpy(np.array([gt])).float()
