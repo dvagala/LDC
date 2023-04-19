@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 from __future__ import print_function
 
 import argparse
@@ -65,14 +69,14 @@ def train_one_epoch(epoch, dataloader, model, criterions, optimizer, device,
         labels = sample_batched['labels'].to(device)  # BxHxW
         preds_list = model(images)
 
-        print(f'labels.shape: {labels[0].shape}')
-        # loss = sum([criterion2(preds, labels,l_w) for preds, l_w in zip(preds_list[:-1],l_weight0)]) # bdcn_loss2
-        loss = 0
-        for preds, l_w in zip(preds_list, l_weight):
-            # print(f'preds.shape: {preds.shape}')
-            # print(f'l_w: {l_w}')
-            # print(f'labels.shape: {labels.shape}')
-            loss += criterion1(preds, labels, l_w, device)
+        # print(f'labels.shape: {labels[0].shape}')
+        loss = sum([criterion2(preds, labels,l_w) for preds, l_w in zip(preds_list[:-1],l_weight0)]) # bdcn_loss2
+        # loss = 0
+        # for preds, l_w in zip(preds_list, l_weight):
+        #     # print(f'preds.shape: {preds.shape}')
+        #     # print(f'l_w: {l_w}')
+        #     # print(f'labels.shape: {labels.shape}')
+        #     loss += criterion1(preds, labels, l_w, device)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -139,6 +143,7 @@ def validate_one_epoch(epoch,  criterions,  dataloader, model, device, output_di
             [0.1, 1.],
             [0.01, 4.]]  # for cats loss. This seems to be for B6. 
 
+    losses = []
     with torch.no_grad():
         for _, sample_batched in enumerate(dataloader):
             images = sample_batched['images'].to(device)
@@ -149,19 +154,21 @@ def validate_one_epoch(epoch,  criterions,  dataloader, model, device, output_di
             # image_shape = sample_batched['image_shape']
             preds_list = model(images)
 
-            # loss = sum([criterion1(preds, labels, l_w, device) for preds, l_w in zip(preds, l_weight)])  # cats_loss
+            loss = sum([criterion1(preds, labels, l_w, device) for preds, l_w in zip(preds_list, l_weight)])  # cats_loss
             # print(f'loss: {loss.item()}')
-            for preds, l_w in zip(preds_list, l_weight):
-                print(f'preds.shape: {preds.shape}')
-                # print(f'l_w: {l_w}')
-                print(f'labels.shape: {labels.shape}')
-                # loss += criterion1(preds, labels, l_w, device)
+            losses.append(loss.item())
+            # for preds, l_w in zip(preds_list, l_weight):
+            #     print(f'preds.shape: {preds.shape}')
+            #     # print(f'l_w: {l_w}')
+            #     print(f'labels.shape: {labels.shape}')
+            #     # loss += criterion1(preds, labels, l_w, device)
 
             # # print('pred shape', preds[0].shape)
             # save_image_batch_to_disk(preds_list[-1],
             #                          output_dir,
             #                          file_names,img_shape=image_shape,
             #                          arg=arg)
+    return np.array(losses).mean()
 
 def save_model_as_torch_script(model, device):
     # An example input you would normally provide to your model's forward() method.
@@ -483,7 +490,7 @@ def main(args):
                                     arg=args
                                     )
     dataloader_val = DataLoader(dataset_val,
-                                    batch_size=args.batch_size,
+                                    batch_size=1,
                                     shuffle=True,
                                     num_workers=args.workers)
 
@@ -560,7 +567,15 @@ def main(args):
         os.makedirs(output_dir_epoch,exist_ok=True)
         os.makedirs(img_test_dir,exist_ok=True)
 
-        validate_one_epoch(epoch,
+        train_avg_loss =train_one_epoch(epoch,dataloader_train,
+                        model, criterion,
+                        optimizer,
+                        device,
+                        args.log_interval_vis,
+                        tb_writer=tb_writer,
+                        args=args)
+
+        val_avg_loss = validate_one_epoch(epoch,
                         criterion,
                         dataloader_val,
                         model,
@@ -568,13 +583,7 @@ def main(args):
                         img_test_dir,
                         arg=args)
 
-        avg_loss =train_one_epoch(epoch,dataloader_train,
-                        model, criterion,
-                        optimizer,
-                        device,
-                        args.log_interval_vis,
-                        tb_writer=tb_writer,
-                        args=args)
+
         # validate_one_epoch(epoch,
         #                    criterion,
         #                    dataloader_val,
@@ -587,9 +596,10 @@ def main(args):
         torch.save(model.module.state_dict() if hasattr(model, "module") else model.state_dict(),
                    os.path.join(output_dir_epoch, f'{epoch}_model{"_scriptable" if model.is_scriptable else ""}.pt'))
         if tb_writer is not None:
-            tb_writer.add_scalar('loss',
-                                 avg_loss,
+            tb_writer.add_scalars('loss',
+                                 {'train_loss':train_avg_loss, 'val_loss':val_avg_loss},
                                  epoch+1)
+
         print('Last learning rate> ', optimizer.param_groups[0]['lr'])
 
     num_param = count_parameters(model)
