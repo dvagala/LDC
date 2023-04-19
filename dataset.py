@@ -620,7 +620,7 @@ class ValidationDataset(Dataset):
                          os.path.join(labels_path, directory_name, file_name + '.png'),)
                     )
         else:
-            file_path = os.path.join(data_root, self.arg.test_list)
+            file_path = os.path.join(data_root, "test_pair.lst")
             if self.arg.train_data.lower() == 'bsds':
 
                 with open(file_path, 'r') as f:
