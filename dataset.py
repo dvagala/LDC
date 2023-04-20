@@ -223,34 +223,6 @@ def dataset_info(dataset_name, is_linux=True):
 
 
 class TestDataset(Dataset):
-    train_modes = ['train', 'test', ]
-    dataset_types = ['rgbr', ]
-    data_types = ['aug', ]
-
-    def __init__(self,
-                 data_root,
-                 img_height,
-                 img_width,
-                 mean_bgr,
-                 train_mode='train',
-                 dataset_type='rgbr',
-                 #  is_scaling=None,
-                 # Whether to crop image or otherwise resize image to match image height and width.
-                 crop_img=False,
-                 arg=None
-                 ):
-        self.data_root = data_root
-        self.train_mode = train_mode
-        self.dataset_type = dataset_type
-        self.data_type = 'aug'  # be aware that this might change in the future
-        self.img_height = img_height
-        self.img_width = img_width
-        self.mean_bgr = mean_bgr
-        self.crop_img = crop_img
-        self.arg = arg
-
-        self.data_index = self._build_index()
-
     def __init__(self,
                  data_root,
                  test_data,

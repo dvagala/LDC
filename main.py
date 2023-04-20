@@ -69,15 +69,9 @@ def train_one_epoch(epoch, dataloader, model, criterions, optimizer, device,
         labels = sample_batched['labels'].to(device)  # BxHxW
         preds_list = model(images)
 
-        # print(f'labels.shape: {labels[0].shape}')
+        # loss = sum([criterion2(preds, labels,l_w) for preds, l_w in zip(preds_list[:-1],l_weight0)]) # bdcn_loss2
         loss = sum([criterion1(preds, labels, l_w, device) for preds, l_w in zip(preds_list, l_weight)])  # cats_loss
 
-        # loss = 0
-        # for preds, l_w in zip(preds_list, l_weight):
-        #     # print(f'preds.shape: {preds.shape}')
-        #     # print(f'l_w: {l_w}')
-        #     # print(f'labels.shape: {labels.shape}')
-        #     loss += criterion1(preds, labels, l_w, device)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
