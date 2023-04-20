@@ -163,36 +163,25 @@ class LDC(nn.Module):
         super(LDC, self).__init__()
         self.block_1 = DoubleConvBlock(3, 16, 16, stride=2,)
         self.block_2 = DoubleConvBlock(16, 32, use_act=False)
-        self.dblock_3 = _DenseBlock(2, 32, 64) # [128,256,100,100]
-        # self.dblock_4 = _DenseBlock(3, 64, 96)# 128
-        # self.dblock_5 = _DenseBlock(3, 96, 32) # 128, 16
-        # self.dblock_6 = _DenseBlock(3, 512, 256)
+        self.dblock_3 = _DenseBlock(2, 32, 64)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-
-        # left skip connections, figure in Journal
         self.side_1 = SingleConvBlock(16, 32, 2)
-        # self.side_2 = SingleConvBlock(32, 64, 2)
-        # self.side_3 = SingleConvBlock(64, 96, 1) # 128
-        # self.side_4 = SingleConvBlock(128, 16, 1)
-        # self.side_5 = SingleConvBlock(512, 256, 1)
-
-        # right skip connections, figure in Journal paper
-        # self.pre_dense_2 = SingleConvBlock(32, 64, 2)
         self.pre_dense_3 = SingleConvBlock(32, 64, 1)
-        # self.pre_dense_4 = SingleConvBlock(64, 96, 1)# 128
-        # self.pre_dense_5 = SingleConvBlock(96, 32, 1)
-        # self.pre_dense_6 = SingleConvBlock(512, 256, 1)
-
-        # USNet
         self.up_block_1 = UpConvBlock(16, 1)
         self.up_block_2 = UpConvBlock(32, 1)
         self.up_block_3 = UpConvBlock(64, 2)
-        # self.up_block_4 = UpConvBlock(96, 3)# 128
-        # self.up_block_5 = UpConvBlock(32, 3)
-        # self.up_block_6 = UpConvBlock(256, 4)
-        # self.block_cat = SingleConvBlock(5, 1, stride=1, use_bs=False) # hed fusion method
-        self.block_cat = CoFusion(3,3)# cats fusion method
 
+
+        # self.block_1 = DoubleConvBlock(3, 32, 64, stride=2,)
+        # self.block_2 = DoubleConvBlock(64, 128, use_act=False)
+        # self.dblock_3 = _DenseBlock(2, 128, 256)
+        # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        # self.side_1 = SingleConvBlock(64, 128, 2)
+        # self.pre_dense_3 = SingleConvBlock(128, 256, 1)
+        # self.up_block_1 = UpConvBlock(64, 1)
+        # self.up_block_2 = UpConvBlock(128, 1)
+        
+        self.block_cat = CoFusion(3,3)# cats fusion method
 
         self.apply(weight_init)
 
