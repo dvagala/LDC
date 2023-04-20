@@ -592,7 +592,7 @@ def main(args):
                         img_test_dir,
                         arg=args)
 
-        do_inference(dataloader_val,
+        do_inference(dataloader_test,
                      model,
                      device,
                      img_test_dir,
