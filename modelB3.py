@@ -180,6 +180,7 @@ class LDC(nn.Module):
         # self.pre_dense_3 = SingleConvBlock(128, 256, 1)
         # self.up_block_1 = UpConvBlock(64, 1)
         # self.up_block_2 = UpConvBlock(128, 1)
+        # self.up_block_3 = UpConvBlock(256, 2)
         
         self.block_cat = CoFusion(3,3)# cats fusion method
 
