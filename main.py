@@ -150,7 +150,6 @@ def validate_one_epoch(epoch,  criterions,  dataloader, model, device, output_di
             images = sample_batched['images'].to(device)
             labels = sample_batched['labels'].to(device)
 
-
             # file_names = sample_batched['file_names']
             # image_shape = sample_batched['image_shape']
             preds_list = model(images)
@@ -496,28 +495,27 @@ def main(args):
                                     num_workers=args.workers)
 
 
-    # dataset_val = TestDataset(args.input_val_dir,
-    #                           test_data=args.test_data,
-    #                           img_width=args.test_img_width,
-    #                           img_height=args.test_img_height,
-    #                           mean_bgr=args.mean_pixel_values[0:3] if len(
-    #                               args.mean_pixel_values) == 4 else args.mean_pixel_values,
-    #                           test_list=args.test_list, arg=args
-    #                           )
-    # dataloader_val = DataLoader(dataset_val,
-    #                             batch_size=1,
-    #                             shuffle=False,
-    #                             num_workers=args.workers)
+    dataset_test = TestDataset(args.input_val_dir,
+                              test_data=args.test_data,
+                              img_width=args.test_img_width,
+                              img_height=args.test_img_height,
+                              mean_bgr=args.mean_pixel_values[0:3] if len(
+                                  args.mean_pixel_values) == 4 else args.mean_pixel_values,
+                              test_list=args.test_list, arg=args
+                              )
+    dataloader_test = DataLoader(dataset_test,
+                                batch_size=1,
+                                shuffle=False,
+                                num_workers=args.workers)
     # Testing
     if args.is_testing:
-
         output_dir = os.path.join(args.res_dir, args.train_data+"2"+ args.test_data)
-        # print(f"output_dir: {output_dir}")
-        # if args.double_img:
-        #     # run twice the same image changing the image's channels
-        #     testPich(checkpoint_path, dataloader_val, model, device, output_dir, args)
-        # else:
-        #     test(checkpoint_path, dataloader_val, model, device, output_dir, args)
+        print(f"output_dir: {output_dir}")
+        if args.double_img:
+            # run twice the same image changing the image's channels
+            testPich(checkpoint_path, dataloader_test, model, device, output_dir, args)
+        else:
+            test(checkpoint_path, dataloader_test, model, device, output_dir, args)
 
         # Count parameters:
         num_param = count_parameters(model)
@@ -583,15 +581,6 @@ def main(args):
                         device,
                         img_test_dir,
                         arg=args)
-
-
-        # validate_one_epoch(epoch,
-        #                    criterion,
-        #                    dataloader_val,
-        #                    model,
-        #                    device,
-        #                    img_test_dir,
-        #                    arg=args)
 
         # Save model after end of every epoch
         torch.save(model.module.state_dict() if hasattr(model, "module") else model.state_dict(),
