@@ -42,7 +42,7 @@ def dataset_info(dataset_name, is_linux=True):
                 'img_width': 512,  # 481
                 'train_list': 'train_pair_all.lst',
                 'test_list': 'test_pair.lst',
-                'data_dir': './BRIND',  # mean_rgb
+                'data_dir': '../BRIND',  # mean_rgb
                 'yita': 0.5
             },
             'BSDS300': {
