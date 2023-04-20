@@ -27,7 +27,7 @@ from dataset import DATASET_NAMES, BipedDataset, TestDataset, ValidationDataset,
 from loss2 import *
 # from modelB6 import LDC
 # from modelB5 import LDC
-from modelB4_scriptable import LDC
+from modelB3_scriptable import LDC
 # from modelB4 import LDC
 # from modelB3 import LDC
 # from modelB2 import LDC
