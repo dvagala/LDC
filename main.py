@@ -164,6 +164,22 @@ def validate_one_epoch(epoch,  criterions,  dataloader, model, device, output_di
             #                          arg=arg)
     return np.array(losses).mean()
 
+def do_inference(dataloader, model, device, output_dir, arg=None):
+    model.eval()
+
+    with torch.no_grad():
+        for _, sample_batched in enumerate(dataloader):
+            images = sample_batched['images'].to(device)
+            # labels = sample_batched['labels'].to(device)
+            file_names = sample_batched['file_names']
+            image_shape = sample_batched['image_shape']
+            preds = model(images)
+            # print('pred shape', preds[0].shape)
+            save_image_batch_to_disk(preds[-1],
+                                     output_dir,
+                                     file_names,img_shape=image_shape,
+                                     arg=arg)
+
 def save_model_as_torch_script(model, device):
     # An example input you would normally provide to your model's forward() method.
     example = torch.rand(1, 3, 352, 352).to(device)
@@ -575,6 +591,12 @@ def main(args):
                         device,
                         img_test_dir,
                         arg=args)
+
+        do_inference(dataloader_val,
+                     model,
+                     device,
+                     img_test_dir,
+                     arg=args)
 
         # Save model after end of every epoch
         torch.save(model.module.state_dict() if hasattr(model, "module") else model.state_dict(),
